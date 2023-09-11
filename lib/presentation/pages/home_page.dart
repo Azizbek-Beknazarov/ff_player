@@ -20,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     super.dispose();
+    audioPlayer.stop();
     audioPlayer.dispose();
   }
 
@@ -45,17 +46,6 @@ class _HomePageState extends State<HomePage> {
 
     audioPlayer.onPositionChanged.listen((newPosition) async {
       position = newPosition;
-
-      if (position.inSeconds == duration.inSeconds &&
-          !isRepeate &&
-          audioPlayer.state == PlayerState.completed) {
-        position = const Duration(seconds: 0);
-
-        // await audioPlayer.play(audioPlayer.source ?? UrlSource(""));
-        await audioPlayer.seek(position);
-        await audioPlayer.pause();
-        isPlaying = false;
-      }
       setState(() {});
     });
   }
@@ -64,6 +54,9 @@ class _HomePageState extends State<HomePage> {
     String url =
         "https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg";
     audioPlayer.setSourceUrl(url);
+    audioPlayer.setReleaseMode(
+      ReleaseMode.stop,
+    );
   }
 
   @override
@@ -177,7 +170,7 @@ class _HomePageState extends State<HomePage> {
                       onPressed: () {
                         isRepeate = !isRepeate;
                         audioPlayer.setReleaseMode(
-                          isRepeate ? ReleaseMode.loop : ReleaseMode.release,
+                          isRepeate ? ReleaseMode.loop : ReleaseMode.stop,
                         );
 
                         setState(() {});
