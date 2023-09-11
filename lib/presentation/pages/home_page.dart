@@ -28,12 +28,13 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     setAudio();
 
-    audioPlayer.onPlayerStateChanged.listen((state) {
+    audioPlayer.onPlayerStateChanged.listen((state) async {
       if (state == PlayerState.playing) {
         isPlaying = true;
       } else {
         isPlaying = false;
       }
+
       setState(() {});
     });
     audioPlayer.onDurationChanged.listen((event) {
@@ -42,16 +43,16 @@ class _HomePageState extends State<HomePage> {
       });
     });
 
-    audioPlayer.onPositionChanged.listen((newPosition) {
-      setState(() {
-        position = newPosition;
-      });
-    });
-    audioPlayer.onPlayerComplete.listen((event) {
-      setState(() {
+    audioPlayer.onPositionChanged.listen((newPosition) async {
+      position = newPosition;
+      if (position.inSeconds == duration.inSeconds && !isRepeate) {
         position = const Duration(seconds: 0);
-        audioPlayer.seek(position);
-      });
+        // await audioPlayer.play(audioPlayer.source ?? UrlSource(""));
+        await audioPlayer.seek(position);
+        await audioPlayer.pause();
+        isPlaying = false;
+      }
+      setState(() {});
     });
   }
 
@@ -111,7 +112,7 @@ class _HomePageState extends State<HomePage> {
                 activeColor: Colors.white,
                 inactiveColor: Colors.white.withOpacity(0.4),
                 min: 0,
-                max: duration.inSeconds.toDouble() + 1,
+                max: duration.inSeconds.toDouble(),
                 onChanged: (newValue) async {
                   final position2 = Duration(seconds: newValue.toInt());
                   await audioPlayer.seek(position2);
@@ -216,13 +217,11 @@ class _HomePageState extends State<HomePage> {
                             height: 24,
                             fit: BoxFit.fitHeight,
                           )),
-                      onPressed: () {
-                        audioPlayer.stop();
-                        audioPlayer.onPlayerStateChanged.listen((event) {
-                          isPlaying == false;
-                        });
-                        position = Duration.zero;
-                        setState(() {});
+                      onPressed: () async {
+                        position = const Duration(seconds: 0);
+                        await audioPlayer.seek(position);
+                        await audioPlayer.pause();
+                        isPlaying = false;
                       },
                     ),
                     InkWell(
