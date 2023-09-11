@@ -215,10 +215,10 @@ class _HomePageState extends State<HomePage> {
                             fit: BoxFit.fitHeight,
                           )),
                       onPressed: () async {
-                        position = const Duration(seconds: 0);
-                        await audioPlayer.seek(position);
-                        await audioPlayer.pause();
-                        isPlaying = false;
+                        await audioPlayer.stop();
+                        if (isRepeate) {
+                          await audioPlayer.resume();
+                        }
                       },
                     ),
                     InkWell(
