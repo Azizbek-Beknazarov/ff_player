@@ -10,7 +10,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  double? sliderValue;
   bool isRepeate = false;
   bool isPlaying = false;
 
@@ -19,7 +18,53 @@ class _HomePageState extends State<HomePage> {
   Duration position = Duration.zero;
 
   @override
+  void dispose() {
+    super.dispose();
+    audioPlayer.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    setAudio();
+
+    audioPlayer.onPlayerStateChanged.listen((state) {
+      if (state == PlayerState.playing) {
+        isPlaying = true;
+      } else {
+        isPlaying = false;
+      }
+      setState(() {});
+    });
+    audioPlayer.onDurationChanged.listen((event) {
+      setState(() {
+        duration = event;
+      });
+    });
+
+    audioPlayer.onPositionChanged.listen((newPosition) {
+      setState(() {
+        position = newPosition;
+      });
+    });
+    audioPlayer.onPlayerComplete.listen((event) {
+      setState(() {
+        position = const Duration(seconds: 0);
+        audioPlayer.seek(position);
+      });
+    });
+  }
+
+  Future setAudio() async {
+    String url =
+        "https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg";
+    audioPlayer.setSourceUrl(url);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    print("pos: $position");
+
     return Scaffold(
       body: Container(
         width: MediaQuery.of(context).size.width,
@@ -37,6 +82,8 @@ class _HomePageState extends State<HomePage> {
         ),
         child: SafeArea(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Align(
                 alignment: Alignment.topLeft,
@@ -64,33 +111,36 @@ class _HomePageState extends State<HomePage> {
                 activeColor: Colors.white,
                 inactiveColor: Colors.white.withOpacity(0.4),
                 min: 0,
-                max: duration.inSeconds.toDouble(),
+                max: duration.inSeconds.toDouble() + 1,
                 onChanged: (newValue) async {
-                  newValue = double.parse(newValue.toStringAsFixed(2));
-                  sliderValue = newValue;
-                  setState(() {});
+                  final position2 = Duration(seconds: newValue.toInt());
+                  await audioPlayer.seek(position2);
+                  await audioPlayer.resume();
                 },
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '15:23',
-                      style: TextStyle(color: Color(0x65FFFFFF)),
+                      // '15:23',
+                      formatTime(position),
+                      style: const TextStyle(color: Color(0x65FFFFFF)),
                     ),
                     Text(
-                      '30:54',
-                      style: TextStyle(color: Color(0x65FFFFFF)),
+                      // '30:54',
+                      formatTime(duration),
+                      style: const TextStyle(color: Color(0x65FFFFFF)),
                     ),
                   ],
                 ),
               ),
               Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(40, 40, 40, 40),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -114,13 +164,17 @@ class _HomePageState extends State<HomePage> {
                                   BorderRadius.all(Radius.circular(20))),
                           child: SvgPicture.asset(
                             isRepeate
-                                ? "assets/svg/repeate_all.svg"
-                                : "assets/svg/repeate.svg",
+                                ? "assets/svg/repeate.svg"
+                                : "assets/svg/repeate_all.svg",
                             height: 24,
                             fit: BoxFit.fitHeight,
                           )),
                       onPressed: () {
                         isRepeate = !isRepeate;
+                        audioPlayer.setReleaseMode(
+                          isRepeate ? ReleaseMode.loop : ReleaseMode.release,
+                        );
+
                         setState(() {});
                       },
                     ),
@@ -135,14 +189,17 @@ class _HomePageState extends State<HomePage> {
                                   BorderRadius.all(Radius.circular(48))),
                           child: SvgPicture.asset(
                             isPlaying
-                                ? "assets/svg/play.svg"
-                                : "assets/svg/pause.svg",
+                                ? "assets/svg/pause.svg"
+                                : "assets/svg/play.svg",
                             height: 56,
                             fit: BoxFit.fitHeight,
                           )),
-                      onPressed: () {
-                        isPlaying = !isPlaying;
-                        setState(() {});
+                      onPressed: () async {
+                        if (isPlaying) {
+                          await audioPlayer.pause();
+                        } else {
+                          await audioPlayer.resume();
+                        }
                       },
                     ),
                     IconButton(
@@ -160,7 +217,11 @@ class _HomePageState extends State<HomePage> {
                             fit: BoxFit.fitHeight,
                           )),
                       onPressed: () {
-                        sliderValue = 100;
+                        audioPlayer.stop();
+                        audioPlayer.onPlayerStateChanged.listen((event) {
+                          isPlaying == false;
+                        });
+                        position = Duration.zero;
                         setState(() {});
                       },
                     ),
@@ -180,5 +241,20 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  ///
+  String formatTime(Duration duration) {
+    String twoDigits(int digit) => digit.toString().padLeft(2, '0');
+    final hours = twoDigits(duration.inHours);
+    final minutes = twoDigits(duration.inMinutes - duration.inHours * 60);
+    final seconds = twoDigits(
+        duration.inSeconds - duration.inMinutes * 60 - duration.inHours * 60);
+
+    return [
+      if (duration.inHours > 0) hours,
+      minutes,
+      seconds,
+    ].join(':');
   }
 }
