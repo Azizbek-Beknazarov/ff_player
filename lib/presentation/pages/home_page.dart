@@ -45,8 +45,12 @@ class _HomePageState extends State<HomePage> {
 
     audioPlayer.onPositionChanged.listen((newPosition) async {
       position = newPosition;
-      if (position.inSeconds == duration.inSeconds && !isRepeate) {
+
+      if (position.inSeconds == duration.inSeconds &&
+          !isRepeate &&
+          audioPlayer.state == PlayerState.completed) {
         position = const Duration(seconds: 0);
+
         // await audioPlayer.play(audioPlayer.source ?? UrlSource(""));
         await audioPlayer.seek(position);
         await audioPlayer.pause();
