@@ -55,7 +55,7 @@ class _HomePageState extends State<HomePage> {
         "https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg";
     audioPlayer.setSourceUrl(url);
     audioPlayer.setReleaseMode(
-      ReleaseMode.stop,
+      isRepeate ? ReleaseMode.loop : ReleaseMode.stop,
     );
   }
 
