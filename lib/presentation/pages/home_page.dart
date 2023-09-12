@@ -19,9 +19,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    super.dispose();
     audioPlayer.stop();
     audioPlayer.dispose();
+    super.dispose();
   }
 
   @override
@@ -215,10 +215,12 @@ class _HomePageState extends State<HomePage> {
                             fit: BoxFit.fitHeight,
                           )),
                       onPressed: () async {
-                        await audioPlayer.stop();
-                        if (isRepeate) {
-                          await audioPlayer.resume();
-                        }
+                        await audioPlayer.stop().then((value) async {
+                          if (isRepeate) {
+                            await audioPlayer.pause();
+                            await audioPlayer.resume();
+                          }
+                        });
                       },
                     ),
                     InkWell(
